@@ -1,0 +1,20 @@
+{
+  "name": "images/ouc3m_test46666.JPEG",
+  "bucket": "mcquiz-global.appspot.com",
+  "metageneration": 1,
+  "generation": 1689874419065,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "cacheControl": "max-age=1000000",
+  "downloadTokens": [
+    "b938b9f9-b13d-45be-a731-64fdb9dfb0f6"
+  ],
+  "etag": "0vn0A1wYsQyzuLProQWEeOB7aEc",
+  "customMetadata": {},
+  "timeCreated": "2023-07-20T17:33:39.066Z",
+  "updated": "2023-07-20T17:33:39.066Z",
+  "size": 11714,
+  "md5Hash": "cjXOZ0fJhXLEpDkhIwUi7A==",
+  "crc32c": "2438069339"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "images/hzfk1_test5555.JPEG",
+  "bucket": "mcquiz-global.appspot.com",
+  "metageneration": 1,
+  "generation": 1689874202358,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "cacheControl": "max-age=1000000",
+  "downloadTokens": [
+    "4643ce4f-b297-4504-85ab-8dc9b1220a9b"
+  ],
+  "etag": "cSTVzvIRA15U+u2iJ/iFZcMNDWg",
+  "customMetadata": {},
+  "timeCreated": "2023-07-20T17:30:02.359Z",
+  "updated": "2023-07-20T17:30:02.359Z",
+  "size": 3063,
+  "md5Hash": "qVp2xDWWHg2M1GFeNyYv3Q==",
+  "crc32c": "2664170875"
+}

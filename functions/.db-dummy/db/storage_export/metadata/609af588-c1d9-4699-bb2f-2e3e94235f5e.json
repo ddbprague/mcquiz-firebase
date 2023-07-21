@@ -1,0 +1,20 @@
+{
+  "name": "images/p2knp_testtt.JPEG",
+  "bucket": "mcquiz-global.appspot.com",
+  "metageneration": 1,
+  "generation": 1689874439920,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "cacheControl": "max-age=1000000",
+  "downloadTokens": [
+    "5f54f096-5ff1-4ee5-8b47-8d19fd903c9c"
+  ],
+  "etag": "yZJpUrGDNksdI/s1k2u+MFecrRQ",
+  "customMetadata": {},
+  "timeCreated": "2023-07-20T17:33:59.920Z",
+  "updated": "2023-07-20T17:33:59.920Z",
+  "size": 159844,
+  "md5Hash": "H0ZnwAUTI93BA+pC7AgkdA==",
+  "crc32c": "144063758"
+}
