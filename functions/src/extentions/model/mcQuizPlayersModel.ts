@@ -22,6 +22,7 @@ export default class McQuizPlayersModel {
     this.collectionPlayersName = `${env}_players_${locale}`;
   }
 
+
   /**
    *  Create new player.
    *
@@ -35,7 +36,8 @@ export default class McQuizPlayersModel {
    * @param {string} playerDeviceId McDonalds App player device id.
    * @param {string} playerDeviceToken McDonalds App player device token.
    * @param {string} update Is an update.
-   * @return {Promise<boolean>}
+   *
+   * @return {boolean}
    */
   public async createNewPlayer(
       playerId: string,
@@ -67,20 +69,93 @@ export default class McQuizPlayersModel {
       addedOn: now,
     };
 
+    try {
+      const playerRef = this.db.doc(
+          `${this.collectionPlayersName}/${playerId}`
+      );
+
+      if (update === "true") {
+        delete data.addedOn;
+        await playerRef.update(data);
+      } else {
+        await playerRef.set(data);
+      }
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to create new player! ->" + e);
+    }
+  }
+
+
+  /**
+   *  Update avatar.
+   *
+   * @param {string} playerId Player ID.
+   * @param {string} playerAvatar Player nickname.
+   *
+   * @return {boolean}
+   */
+  public async updateAvatar(
+      playerId: string,
+      playerAvatar: string,
+  ) {
+    const now = Timestamp.now();
+
+    const data: CreatePlayerData = {
+      avatar: playerAvatar,
+      updatedOn: now,
+    };
+
     const playerRef = this.db.doc(
         `${this.collectionPlayersName}/${playerId}`
     );
 
-    if (update === "true") {
-      delete data.addedOn;
-      return playerRef.update(data);
-    } else {
-      return playerRef.set(data);
+    try {
+      await playerRef.update(data);
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to update player avatar! ->" + e);
     }
   }
 
+
   /**
-   * Update player score.
+   *  Update nickname.
+   *
+   * @param {string} playerId Player ID.
+   * @param {string} playerNickname Player nickname.
+   *
+   * @return {boolean}
+   */
+  public async updateNickname(
+      playerId: string,
+      playerNickname: string,
+  ) {
+    const now = Timestamp.now();
+
+    const data: CreatePlayerData = {
+      nickname: playerNickname,
+      updatedOn: now,
+    };
+
+    try {
+      const playerRef = this.db.doc(
+          `${this.collectionPlayersName}/${playerId}`
+      );
+
+      await playerRef.update(data);
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to update player nickname! ->" + e);
+    }
+  }
+
+
+  /**
+   * Update player statistics.
    *
    * @param {string} matchId Question ID.
    * @param {string} playerId Player ID
@@ -88,9 +163,9 @@ export default class McQuizPlayersModel {
    * score: number,
    * correctAnswers: number,
    * wrongAnswers: number,
-   * }
-   * } playerScoreData Score data of the player.
-   * data to update.
+   * }} playerScoreData Score data of the player.
+   *
+   * @return {boolean}
    */
   public async updatePlayerStatistics(
       matchId: string,
@@ -113,13 +188,15 @@ export default class McQuizPlayersModel {
       updatedOn: Timestamp.now(),
     };
 
-    const playerStatisticsRef = this.db
-        .doc(
-            `${this.collectionPlayersName}/${playerId}`
-        );
-
     try {
+      const playerStatisticsRef = this.db
+          .doc(
+              `${this.collectionPlayersName}/${playerId}`
+          );
+
       await playerStatisticsRef.update(data);
+
+      return true;
     } catch (e) {
       throw new Error("Failed to save player general statistics! ->" + e);
     }

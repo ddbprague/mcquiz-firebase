@@ -7,7 +7,7 @@
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
+    "deploy": "firebase deploy --project mcquiz-global --only functions",
     "deploy:development": "firebase deploy --only functions --project=\"mcquiz---development\"",
     "deploy:preview": "firebase deploy --only functions --project=\"mcquiz---preview\"",
     "deploy:production": "firebase deploy --only functions --project=\"mcquiz-ab4a3\"",

@@ -25,16 +25,17 @@ export default class McQuizMatchModel {
     this.collectionQuestionsName = `${env}_questions`;
   }
 
+
   /**
    * Subscribe player in match
    *
-   * @return {Promise<QuerySnapshot<DocumentData>>}
-   * QuerySnapshot<DocumentData>.
    * @param {string} matchId
    * @param {string} playerId
    * @param {string} playerNickname
    * @param {string} matchPlayerAvatar
    * @param {string} locale
+   *
+   * @return {boolean}
    */
   public async matchSubscribePlayer(
       matchId: string,
@@ -44,7 +45,7 @@ export default class McQuizMatchModel {
       locale: string
   ) {
     const playerRef = this.db.doc(
-        `${this.collectionPlayersName}_local/${playerId}`
+        `${this.collectionPlayersName}_${locale}/${playerId}`
     );
 
     const data = {
@@ -66,21 +67,22 @@ export default class McQuizMatchModel {
       const matchPlayer = await matchPlayerRef.get();
 
       if (!matchPlayer.exists) await matchPlayerRef.set(data);
+
+      return true;
     } catch (e) {
       throw new Error("Failed to subscribe player to match! ->" + e);
     }
-
-    return true;
   }
+
 
   /**
    * Unsubscribe player from match
    *
-   * @return {Promise<QuerySnapshot<DocumentData>>}
-   * QuerySnapshot<DocumentData>.
    * @param {string} matchId
    * @param {string} playerId
    * @param {string} locale
+   *
+   * @return {boolean}
    */
   public async matchUnSubscribePlayer(
       matchId: string,
@@ -96,42 +98,10 @@ export default class McQuizMatchModel {
 
       return true;
     } catch (e) {
-      throw new Error("Failed to subscribe player to match! ->" + e);
+      throw new Error("Failed to unsubscribe player to match! ->" + e);
     }
   }
 
-  /**
-   * Return the next match within the seconds added.
-   *
-   * @param {number} secondsAdded Second before the match should start.
-   * @return {Promise<QuerySnapshot<DocumentData>>}
-   * QuerySnapshot<DocumentData>.
-   */
-  public async getNextMatch(
-      secondsAdded: number,
-  ) {
-    // Consistent timestamp minus ${secondsAdded} seconds
-    const datePlus = new Date(Date.now() + secondsAdded * 1000);
-    const nowPlus = admin.firestore.Timestamp.fromDate(datePlus);
-
-    const query = this.db.collection(this.collectionMatchesName)
-        .where("startingAt", "<", nowPlus)
-        .where("status", "==", "scheduled");
-
-    return await query.get();
-  }
-
-  /**
-   * Return all match (for local debug).
-   *
-   * @return {Promise<QuerySnapshot<DocumentData>>}
-   * QuerySnapshot<DocumentData>.
-   */
-  public async getAllMatch() {
-    const query = this.db.collection(this.collectionMatchesName);
-
-    return await query.get();
-  }
 
   /**
    * Save player answer.
@@ -142,6 +112,8 @@ export default class McQuizMatchModel {
    * @param {string} questionKey Question ID.
    * @param {string} choiceKey Answer ID.
    * @param {string} locale Language used by player.
+   *
+   * return {boolean}
    */
   public async createPlayerAnswer(
       playerId: string,
@@ -174,27 +146,201 @@ export default class McQuizMatchModel {
 
     try {
       await matchAnswerRef.create(data);
+
+      return true;
     } catch (e) {
       throw new Error("Failed to create player answer! ->" + e);
     }
   }
 
+
+  /**
+   * Return the next match within the seconds added.
+   *
+   * @param {number} secondsAdded Second before the match should start.
+   *
+   * @return {Promise<QuerySnapshot<DocumentData>>}
+   */
+  public async getNextMatch(
+      secondsAdded: number,
+  ) {
+    // Consistent timestamp minus ${secondsAdded} seconds
+    const datePlus = new Date(Date.now() + secondsAdded * 1000);
+    const nowPlus = admin.firestore.Timestamp.fromDate(datePlus);
+
+    try {
+      const query = this.db.collection(this.collectionMatchesName)
+          .where("startingAt", "<", nowPlus)
+          .where("status", "==", "scheduled");
+
+      return await query.get();
+    } catch (e) {
+      throw new Error("Failed to get next match! ->" + e);
+    }
+  }
+
+
+  /**
+   * Return all match (for local debug).
+   *
+   * @return {Promise<QuerySnapshot<DocumentData>>}
+   */
+  public async getAllMatch() {
+    try {
+      const query = this.db.collection(this.collectionMatchesName);
+
+      return await query.get();
+    } catch (e) {
+      throw new Error("Failed to get all matches! ->" + e);
+    }
+  }
+
+
+  /**
+   * Submit player coupon activation
+   *
+   * @param {string} playerId
+   * @param {string} matchId
+   * @param {string} rewardName
+   * @param {string} rewardLoyaltyId
+   * @param {string} rewardId
+   * @param {string} locale
+   *
+   * @return {boolean}
+   */
+  public async submitPlayerCouponActivation(
+      playerId: string,
+      matchId: string,
+      rewardName: string,
+      rewardLoyaltyId: string,
+      rewardId: string,
+      locale: string,
+  ) {
+    const data = {
+      reward: {
+        rewardName,
+        rewardLoyaltyId,
+        rewardId,
+        addedOn: Timestamp.now(),
+      },
+    };
+
+    const matchPlayerRef = this.db.doc(
+        `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
+    );
+
+    try {
+      await matchPlayerRef.update(data);
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to activate coupon for player! ->" + e);
+    }
+  }
+
+
+  /**
+   * Submit player rating & message
+   *
+   * @param {string} playerId
+   * @param {string} matchId
+   * @param {string} ratingScore
+   * @param {string} ratingComment
+   * @param {string} locale
+   *
+   * @return {boolean}
+   */
+  public async submitPlayerRating(
+      playerId: string,
+      matchId: string,
+      ratingScore: string,
+      ratingComment: string,
+      locale: string,
+  ) {
+    const dataMatchPlayer = {
+      reward: {
+        ratingScore,
+        ratingComment,
+        addedOn: Timestamp.now(),
+      },
+    };
+
+    /* Update Match Player */
+    const matchPlayerRef = this.db.doc(
+        `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
+    );
+
+    /* Update Match */
+    const matchRef = this.db.doc(`${this.collectionMatchesName}/${matchId}`);
+    const matchDoc = await matchRef.get();
+
+    let ratingPlayers;
+    let ratingTotalScore;
+
+    if (!matchDoc.exists) {
+      throw new Error(`This match doesn't exist! -> ${matchId}`);
+    }
+
+    const match = matchDoc.data();
+
+    if (match && match.rating && match.rating.ratingPlayers && match.rating.ratingTotalScore) {
+      if (playerId in match.rating.ratingPlayers) {
+        ratingTotalScore = match.rating.ratingTotalScore - match.rating.ratingPlayers[playerId] + ratingScore;
+        match.rating.ratingPlayers[playerId] = ratingScore;
+
+        ratingPlayers = match.rating.ratingPlayers;
+      } else {
+        ratingTotalScore = match.rating.ratingTotalScore + ratingScore;
+        match.rating.ratingPlayers[playerId] = ratingScore;
+
+        ratingPlayers = match.rating.ratingPlayers;
+      }
+    } else {
+      ratingPlayers = {[playerId]: ratingScore};
+      ratingTotalScore = ratingScore;
+    }
+
+    const dataMatch = {
+      rating: {
+        ratingPlayers,
+        ratingTotalScore,
+      },
+    };
+
+    try {
+      await matchPlayerRef.update(dataMatchPlayer);
+      await matchRef.update(dataMatch);
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to submit player rating! ->" + e);
+    }
+  }
+
+
   /**
    * Update the status of the match snapshot.
    *
-   * @param {QueryDocumentSnapshot<DocumentData>} snapshot
-   * Snapshot of the match.
+   * @param {FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>}snapshot
    * @param {string} data data to update.
-   * @return {Promise<WriteResult>}
-   * Promise<WriteResult>.
+   *
+   * @return {boolean}
+
    */
   public async updateStatus(
       snapshot:
         FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>,
       data: object,
   ) {
-    return await snapshot.ref.update(data);
+    try {
+      await snapshot.ref.update(data);
+
+      return true;
+    } catch (e) {
+      throw new Error("Failed to update status! ->" + e);
+    }
   }
+
 
   /**
    * Update answer statistics for a question.
@@ -204,6 +350,8 @@ export default class McQuizMatchModel {
    * @param {string} questionKey Question Id
    * @param {string} choiceKey Choice Key
    * @param {string} locale Language used by player
+   *
+   * @return {boolean}
    */
   public async updateQuestionAnswerStatistics(
       matchId: string,
@@ -226,10 +374,13 @@ export default class McQuizMatchModel {
       } else {
         await matchQuestionAnswersStatRef.create(data);
       }
+
+      return true;
     } catch (e) {
       throw new Error("Failed to update question answer statistics! ->" + e);
     }
   }
+
 
   /**
    * Update player score.
@@ -243,7 +394,8 @@ export default class McQuizMatchModel {
    * }
    * } playerScoreData Score data of the player.
    * @param {string} locale Language used by player.
-   * data to update.
+   *
+   * @return {boolean}
    */
   public async updatePlayerMatchScore(
       matchId: string,
@@ -274,10 +426,12 @@ export default class McQuizMatchModel {
 
     try {
       await matchPlayerRef.update(data);
+      return true;
     } catch (e) {
       throw new Error("Failed to save player match statistics! ->" + e);
     }
   }
+
 
   /**
    * Count how many players already answers given question.
@@ -285,8 +439,8 @@ export default class McQuizMatchModel {
    * @param {string} matchId Match ID.
    * @param {number} questionKey Question Key.
    * @param {number} locale Language used by the player.
+   *
    * @return {number}
-   * Number of answers for this question.
    */
   public async countPlayersAnswerQuestion(
       matchId: string,

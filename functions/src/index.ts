@@ -14,7 +14,7 @@ admin.initializeApp();
  * Note: Cloud Function V2.
  *
  */
-export const matchrunner =
+export const matchRunner =
     onSchedule(
         {
           region: "europe-west1",
@@ -157,16 +157,16 @@ export const createPlayer =
               );
 
               await mcQuizPlayersModelApp.createNewPlayer(
-                  playerId,
-                  playerNickname,
-                  playerAvatar,
-                  mcdonaldsId,
-                  playerFirstName,
-                  playerLastName,
-                  playerEmail,
-                  playerDeviceId,
-                  playerDeviceToken,
-                  update
+                  playerId.toString(),
+                  playerNickname.toString(),
+                  playerAvatar.toString(),
+                  mcdonaldsId.toString(),
+                  playerFirstName.toString(),
+                  playerLastName.toString(),
+                  playerEmail.toString(),
+                  playerDeviceId.toString(),
+                  playerDeviceToken.toString(),
+                  update.toString()
               );
             } catch (e) {
               throw new HttpsError(
@@ -252,11 +252,11 @@ export const matchSubscribePlayer =
               );
 
               await mcQuizMatchModelApp.matchSubscribePlayer(
-                  matchId,
-                  playerId,
-                  playerNickname,
-                  matchPlayerAvatar,
-                  locale
+                  matchId.toString(),
+                  playerId.toString(),
+                  playerNickname.toString(),
+                  matchPlayerAvatar.toString(),
+                  locale.toString()
               );
             } catch (e) {
               throw new HttpsError(
@@ -328,9 +328,9 @@ export const matchUnSubscribePlayer =
               );
 
               await mcQuizMatchModelApp.matchUnSubscribePlayer(
-                  matchId,
-                  playerId,
-                  locale
+                  matchId.toString(),
+                  playerId.toString(),
+                  locale.toString()
               );
             } catch (e) {
               throw new HttpsError(
@@ -355,7 +355,7 @@ export const matchUnSubscribePlayer =
  * Note: Cloud Function V2.
  *
  */
-export const saveplayeranswer =
+export const matchSubmitPlayerAnswer =
     onCall(
         {
           region: "europe-west1",
@@ -364,8 +364,8 @@ export const saveplayeranswer =
           const cKey = "O42PksS42Df18sSDE985AAdl";
 
           const {
-            env,
             key,
+            baseCollection,
             locale,
             playerId,
             playerName,
@@ -376,10 +376,10 @@ export const saveplayeranswer =
 
 
           if (cKey === key) {
-            if (!env) {
+            if (!baseCollection) {
               throw new HttpsError(
                   "failed-precondition",
-                  "Missing locale!"
+                  "Missing baseCollection!"
               );
             }
             if (!locale) {
@@ -426,7 +426,7 @@ export const saveplayeranswer =
 
             try {
               const McQuizMatchModel = new McQuizPlayerAnswerApp(
-                  env.toString(),
+                  baseCollection.toString(),
                   locale.toString(),
                   playerId.toString(),
                   playerName.toString(),
@@ -465,37 +465,375 @@ export const saveplayeranswer =
         }
     );
 
+
 /**
  * Note: Cloud Function V2.
  *
  */
-export const gameemulatorcz =
-    onRequest(
-        {
-          region: "europe-west1",
-          timeoutSeconds: 300,
-          memory: "2GiB",
-        },
-        async (req, res) => {
-          const mcQuizMatchApp = new McQuizMatchApp(
-              90,
-              "development",
-              true
+export const matchSubmitPlayerCouponActivation =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        playerId,
+        matchId,
+        rewardName,
+        rewardLoyaltyId,
+        rewardId,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!playerId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerId!"
+          );
+        }
+        if (!matchId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing matchId!"
+          );
+        }
+        if (!rewardName) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing rewardName!"
+          );
+        }
+        if (!rewardLoyaltyId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing rewardLoyaltyId!"
+          );
+        }
+        if (!rewardId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing rewardId!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizMatchModel(
+              baseCollection.toString(),
           );
 
-          // Fire the app!
-          await mcQuizMatchApp.init();
-
-          res.json({result: "End of the game!"});
+          await mcQuizMatchModelApp.submitPlayerCouponActivation(
+              playerId.toString(),
+              matchId.toString(),
+              rewardName.toString(),
+              rewardLoyaltyId.toString(),
+              rewardId.toString(),
+              locale.toString()
+          );
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to activate coupon for player! ->" + e
+          );
         }
-    );
+
+        return {
+          success: true,
+          message: "Player nickname updated!",
+        };
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
 
 
 /**
  * Note: Cloud Function V2.
  *
  */
-export const createdummies =
+export const matchSubmitPlayerRating =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        playerId,
+        matchId,
+        ratingScore,
+        ratingComment,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!playerId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerId!"
+          );
+        }
+        if (!matchId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing matchId!"
+          );
+        }
+        if (!ratingScore) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing rewardName!"
+          );
+        }
+        if (!ratingComment) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing rewardLoyaltyId!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizMatchModel(
+              baseCollection.toString(),
+          );
+
+          await mcQuizMatchModelApp.submitPlayerRating(
+              playerId.toString(),
+              matchId.toString(),
+              ratingScore.toString(),
+              ratingComment.toString(),
+              locale.toString()
+          );
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to activate coupon for player! ->" + e
+          );
+        }
+
+        return {
+          success: true,
+          message: "Player nickname updated!",
+        };
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const playerUpdateAvatar =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        playerId,
+        playerAvatar,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!playerId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerId!"
+          );
+        }
+        if (!playerAvatar) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerAvatar!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizPlayersModel(
+              baseCollection.toString(),
+              locale.toString(),
+          );
+
+          await mcQuizMatchModelApp.updateAvatar(
+              playerId.toString(),
+              playerAvatar.toString()
+          );
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to update player avatar! ->" + e
+          );
+        }
+
+        return {
+          success: true,
+          message: "Player avatar updated!",
+        };
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
+
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const playerUpdateNickname =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        playerId,
+        playerNickname,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!playerId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerId!"
+          );
+        }
+        if (!playerNickname) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerNickname!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizPlayersModel(
+              baseCollection.toString(),
+              locale.toString(),
+          );
+
+          await mcQuizMatchModelApp.updateNickname(
+              playerId.toString(),
+              playerNickname.toString()
+          );
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to update player nickname! ->" + e
+          );
+        }
+
+        return {
+          success: true,
+          message: "Player nickname updated!",
+        };
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const gameEmulatorCz =
+onRequest(
+    {
+      region: "europe-west1",
+      timeoutSeconds: 300,
+      memory: "2GiB",
+    },
+    async (req, res) => {
+      const mcQuizMatchApp = new McQuizMatchApp(
+          90,
+          "development",
+          true
+      );
+
+      // Fire the app!
+      await mcQuizMatchApp.init();
+
+      res.json({result: "End of the game!"});
+    }
+);
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const createDummies =
     onRequest(
         {
           region: "europe-west1",

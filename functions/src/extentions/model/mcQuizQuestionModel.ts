@@ -23,6 +23,7 @@ export default class McQuizQuestionModel {
     this.collectionQuestionsName = `${env}_questions`;
   }
 
+
   /**
    * Get question with questionRef.
    *
@@ -33,8 +34,13 @@ export default class McQuizQuestionModel {
   public async getQuestion(
       questionRef: DocumentReference<DocumentData>
   ) {
-    return await questionRef.get();
+    try {
+      return await questionRef.get();
+    } catch (e) {
+      throw new Error("Failed to get question! ->" + e);
+    }
   }
+
 
   /**
    * Get choices with question ID.
@@ -48,10 +54,15 @@ export default class McQuizQuestionModel {
       questionId: string,
       locale: string,
   ) {
-    const choicesRef = this.db
-        .doc(
-            `${this.collectionQuestionsName}/${questionId}/locales/${locale}`
-        );
-    return await choicesRef.get();
+    try {
+      const choicesRef = this.db
+          .doc(
+              `${this.collectionQuestionsName}/${questionId}/locales/${locale}`
+          );
+
+      return await choicesRef.get();
+    } catch (e) {
+      throw new Error("Failed to get question choices! ->" + e);
+    }
   }
 }
