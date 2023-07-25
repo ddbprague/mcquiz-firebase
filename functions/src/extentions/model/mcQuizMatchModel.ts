@@ -157,6 +157,29 @@ export default class McQuizMatchModel {
   /**
    * Return the next match within the seconds added.
    *
+   * @param {number} matchId Match ID.
+   *
+   * @return {Promise<QuerySnapshot<DocumentData>>}
+   */
+  public async getMatch(
+      matchId: string,
+  ) {
+    // Consistent timestamp minus ${secondsAdded} seconds
+    try {
+      const matchRef = this.db.doc(
+          `${this.collectionMatchesName}/${matchId}`
+      );
+
+      return await matchRef.get();
+    } catch (e) {
+      throw new Error("Failed to get match! ->" + e);
+    }
+  }
+
+
+  /**
+   * Return the next match within the seconds added.
+   *
    * @param {number} secondsAdded Second before the match should start.
    *
    * @return {Promise<QuerySnapshot<DocumentData>>}
@@ -192,6 +215,29 @@ export default class McQuizMatchModel {
       return await query.get();
     } catch (e) {
       throw new Error("Failed to get all matches! ->" + e);
+    }
+  }
+
+  /**
+   * Update player score.
+   *
+   * @param {string} matchId Question ID.
+   * @param {string} locale Language used by player.
+   *
+   * @return {boolean}
+   */
+  public async getMatchPlayers(
+      matchId: string,
+      locale: string,
+  ) {
+    try {
+      const matchPlayerRef = this.db.collection(
+          `${this.collectionMatchesName}/${matchId}/locales/${locale}/players`
+      ).orderBy("score", "asc");
+
+      return await matchPlayerRef.get();
+    } catch (e) {
+      throw new Error("Failed to get match players! ->" + e);
     }
   }
 

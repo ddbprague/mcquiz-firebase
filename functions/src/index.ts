@@ -7,6 +7,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import McQuizPlayersModel from "./extentions/model/mcQuizPlayersModel";
 import McQuizMatchModel from "./extentions/model/mcQuizMatchModel";
+import McQuizRewardModel from "./extentions/model/mcQuizRewardModel";
 
 admin.initializeApp();
 
@@ -186,6 +187,175 @@ export const createPlayer =
         }
     );
 
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const matchGetRewardInfo =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        matchId,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!matchId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing matchId!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizRewardModel(
+              baseCollection.toString(),
+              locale.toString(),
+          );
+
+          const reward: any = await mcQuizMatchModelApp.getReward(
+              matchId,
+          );
+
+          if (!reward || !reward.exists) {
+            return {
+              success: false,
+              message: "No reward with this ref",
+            };
+          }
+
+          const data = reward.data();
+
+          return {
+            success: true,
+            rewards: {
+              standard: {
+                name: data.standardReward.rewardName,
+                image: data.standardReward.rewardImage,
+              },
+              premiumReward: {
+                name: data.premiumReward.rewardName,
+                image: data.premiumReward.rewardImage,
+              },
+            },
+          };
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to det reward info! ->" + e
+          );
+        }
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const matchGetPlayerRewardInfo =
+onCall(
+    {
+      region: "europe-west1",
+    },
+    async (request) => {
+      const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+      const {
+        key,
+        baseCollection,
+        matchId,
+        playerId,
+        locale,
+      } = request.data;
+
+      if (cKey === key) {
+        if (!baseCollection) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing baseCollection!"
+          );
+        }
+        if (!matchId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing matchId!"
+          );
+        }
+        if (!playerId) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing playerId!"
+          );
+        }
+        if (!locale) {
+          throw new HttpsError(
+              "failed-precondition",
+              "Missing locale!"
+          );
+        }
+
+        try {
+          const mcQuizMatchModelApp = new McQuizRewardModel(
+              baseCollection.toString(),
+              locale.toString(),
+          );
+
+          const reward: any = await mcQuizMatchModelApp.getRewardWithPlayerId(
+              matchId,
+              playerId,
+          );
+
+          if (!reward) {
+            return {
+              success: false,
+              message: "No reward with this ref",
+            };
+          }
+
+          console.log(reward);
+
+          return {
+            success: true,
+            reward,
+          };
+        } catch (e) {
+          throw new HttpsError(
+              "internal", "Failed to det reward info! ->" + e
+          );
+        }
+      } else {
+        throw new HttpsError(
+            "failed-precondition", "Error!"
+        );
+      }
+    }
+);
+
+
 /**
  * Note: Cloud Function V2.
  *
@@ -361,7 +531,7 @@ export const matchSubmitPlayerAnswer =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDE985AAdl";
+          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
 
           const {
             key,
@@ -371,7 +541,7 @@ export const matchSubmitPlayerAnswer =
             playerName,
             matchId,
             questionKey,
-            choiceKey,
+            selectedChoiceKey,
           } = request.data;
 
 
@@ -412,10 +582,10 @@ export const matchSubmitPlayerAnswer =
                   "Missing questionKey!"
               );
             }
-            if (!choiceKey) {
+            if (!selectedChoiceKey) {
               throw new HttpsError(
                   "failed-precondition",
-                  "Missing choiceKey!"
+                  "Missing selectedChoiceKey!"
               );
             }
 
@@ -432,7 +602,7 @@ export const matchSubmitPlayerAnswer =
                   playerName.toString(),
                   matchId.toString(),
                   questionKey.toString(),
-                  choiceKey.toString(),
+                  selectedChoiceKey.toString(),
                   firstAnswerScore,
                   correctAnswerScore,
                   wrongAnswerScore
@@ -447,15 +617,7 @@ export const matchSubmitPlayerAnswer =
 
             return {
               success: true,
-              message: "Player score saved!",
-              elements: {
-                locale,
-                playerId,
-                playerName,
-                matchId,
-                questionKey,
-                choiceKey,
-              },
+              message: "Player answer saved!",
             };
           } else {
             throw new HttpsError(
