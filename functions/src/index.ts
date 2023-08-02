@@ -8,6 +8,7 @@ import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import McQuizPlayersModel from "./extentions/model/mcQuizPlayersModel";
 import McQuizMatchModel from "./extentions/model/mcQuizMatchModel";
 import McQuizRewardModel from "./extentions/model/mcQuizRewardModel";
+import {McQuizPlayersStatisticsApp} from "./extentions/mcQuizPlayersStatistics";
 
 admin.initializeApp();
 
@@ -179,6 +180,150 @@ export const createPlayer =
               success: true,
               message: "Player created!",
             };
+          } else {
+            throw new HttpsError(
+                "failed-precondition", "Error!"
+            );
+          }
+        }
+    );
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const getPlayer =
+    onCall(
+        {
+          region: "europe-west1",
+        },
+        async (request) => {
+          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+          const {
+            key,
+            baseCollection,
+            playerId,
+            locale,
+          } = request.data;
+
+          if (cKey === key) {
+            if (!baseCollection) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing baseCollection!"
+              );
+            }
+            if (!playerId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing playerId!"
+              );
+            }
+            if (!locale) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing locale!"
+              );
+            }
+
+            try {
+              const mcQuizPlayersModelApp = new McQuizPlayersModel(
+                  baseCollection.toString(),
+                  locale.toString(),
+              );
+
+              const player = await mcQuizPlayersModelApp.getPlayer(
+                  playerId.toString(),
+              );
+
+              const playerData = player && player.exists? player.data() : null;
+
+              return {
+                success: true,
+                player: !playerData? null : {
+                  "nickname": playerData.nickname,
+                  "mcdonaldsId": playerData.mcdonaldsId,
+                  "firstName": playerData.firstName,
+                  "lastName": playerData.lastName,
+                  "email": playerData.email,
+                  "deviceId": playerData.deviceId,
+                  "deviceToken": playerData.deviceToken,
+                },
+              };
+            } catch (e) {
+              throw new HttpsError(
+                  "internal", "Failed to get player! ->" + e
+              );
+            }
+          } else {
+            throw new HttpsError(
+                "failed-precondition", "Error!"
+            );
+          }
+        }
+    );
+
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
+export const getPlayersStatistics =
+    onCall(
+        {
+          region: "europe-west1",
+        },
+        async (request) => {
+          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+          const {
+            key,
+            baseCollection,
+            playerId,
+            matchId,
+            locale,
+          } = request.data;
+
+          if (cKey === key) {
+            if (!baseCollection) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing baseCollection!"
+              );
+            }
+            if (!playerId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing playerId!"
+              );
+            }
+            if (!locale) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing locale!"
+              );
+            }
+
+            try {
+              const mcQuizPlayersModelApp = new McQuizPlayersStatisticsApp(
+                  baseCollection.toString(),
+                  locale.toString(),
+                  playerId.toString(),
+              matchId? matchId.toString() : null,
+              );
+
+              const statistics = await mcQuizPlayersModelApp.init();
+
+              return {
+                success: true,
+                statistics,
+              };
+            } catch (e) {
+              throw new HttpsError(
+                  "internal", "Failed to get players statistics! ->" + e
+              );
+            }
           } else {
             throw new HttpsError(
                 "failed-precondition", "Error!"
@@ -1003,7 +1148,7 @@ export const createDummies =
           memory: "4GiB",
         },
         async (req, res) => {
-          const maxNewPlayers = 15;
+          const maxNewPlayers = 5;
           const firstAnswerScore = 50;
           const correctAnswerScore = 300;
           const wrongAnswerScore = 10;

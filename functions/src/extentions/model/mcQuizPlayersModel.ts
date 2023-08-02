@@ -11,15 +11,15 @@ export default class McQuizPlayersModel {
   private readonly collectionPlayersName: string;
 
   /**
-   * @param {string} env
+   * @param {string} baseCollection Base collection.
    * @param {string} locale
    */
   constructor(
-      env: string,
+      baseCollection: string,
       locale: string,
   ) {
     this.db = admin.firestore();
-    this.collectionPlayersName = `${env}_players_${locale}`;
+    this.collectionPlayersName = `${baseCollection}_players_${locale}`;
   }
 
 
@@ -84,6 +84,59 @@ export default class McQuizPlayersModel {
       return true;
     } catch (e) {
       throw new Error("Failed to create new player! ->" + e);
+    }
+  }
+
+
+  /**
+   *  Get player.
+   *
+   * @param {string} playerId Player ID.
+   *
+   * @return {boolean}
+   */
+  public async getPlayer(
+      playerId: string,
+  ) {
+    try {
+      const playerRef = this.db.doc(
+          `${this.collectionPlayersName}/${playerId}`
+      );
+
+      return playerRef.get();
+    } catch (e) {
+      throw new Error("Failed to get player! ->" + e);
+    }
+  }
+
+
+  /**
+   *  Get all players.
+   *
+   * @param {string} fieldPath Order Field.
+   * @param {"desc" | "asc"} directionStr Order Direction.
+   * @param {number} limit Result Limitation.
+   *
+   * @return {boolean}
+   */
+  public async getPlayers(
+      fieldPath: string,
+      directionStr: "desc" | "asc",
+      limit?: number,
+  ) {
+    try {
+      let playersCollection = this.db.collection(
+          `${this.collectionPlayersName}`
+      )
+          .orderBy(fieldPath, directionStr);
+
+      if (limit) {
+        playersCollection = playersCollection.limit(limit);
+      }
+
+      return playersCollection.get();
+    } catch (e) {
+      throw new Error("Failed to get players! ->" + e);
     }
   }
 

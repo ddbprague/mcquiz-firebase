@@ -13,16 +13,16 @@ export default class McQuizMatchModel {
 
   /**
    *
-   * @param {string} env
+   * @param {string} baseCollection Base collection.
    */
   constructor(
-      env: string
+      baseCollection: string
   ) {
     this.db = admin.firestore();
 
-    this.collectionMatchesName = `${env}_matches`;
-    this.collectionPlayersName = `${env}_players`;
-    this.collectionQuestionsName = `${env}_questions`;
+    this.collectionMatchesName = `${baseCollection}_matches`;
+    this.collectionPlayersName = `${baseCollection}_players`;
+    this.collectionQuestionsName = `${baseCollection}_questions`;
   }
 
 
@@ -204,7 +204,7 @@ export default class McQuizMatchModel {
 
 
   /**
-   * Return all match (for local debug).
+   * Get all match (for local debug).
    *
    * @return {Promise<QuerySnapshot<DocumentData>>}
    */
@@ -218,22 +218,32 @@ export default class McQuizMatchModel {
     }
   }
 
+
   /**
-   * Update player score.
+   * Get match players.
    *
    * @param {string} matchId Question ID.
    * @param {string} locale Language used by player.
+   * @param {string} fieldPath Order Field.
+   * @param {"desc" | "asc"} directionStr Order Direction.
+   * @param {number} limit Result Limitation.
    *
-   * @return {boolean}
    */
   public async getMatchPlayers(
       matchId: string,
       locale: string,
+      fieldPath: string,
+      directionStr: "desc" | "asc",
+      limit?: number,
   ) {
     try {
-      const matchPlayerRef = this.db.collection(
+      let matchPlayerRef = this.db.collection(
           `${this.collectionMatchesName}/${matchId}/locales/${locale}/players`
-      ).orderBy("score", "asc");
+      ).orderBy(fieldPath, directionStr);
+
+      if (limit) {
+        matchPlayerRef = matchPlayerRef.limit(limit);
+      }
 
       return await matchPlayerRef.get();
     } catch (e) {

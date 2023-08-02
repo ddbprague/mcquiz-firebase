@@ -82,7 +82,7 @@ export default class McQuizRewardModel {
         return null;
       }
 
-      const matchPlayers = await mcQuizMatchModelApp.getMatchPlayers(matchId, this.locale);
+      const matchPlayers = await mcQuizMatchModelApp.getMatchPlayers(matchId, this.locale, "score", "asc");
 
       let countPlayerPosition = 0;
       let shouldSkip = false;

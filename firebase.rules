@@ -1,0 +1,156 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Access only to some authors and Firebase Function
+    function signedInAndUid() {
+      return request.auth.uid == "xhxdeqaYWS6hejwPfuX8Du92aYoc" || request.auth.uid == "other";
+    }
+
+
+    // ####
+    // Match Configuration
+    match /development_matches/{game} {
+      match /locales/{locale}/answers/{matchAnswer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+
+    match /preview_matches/{game} {
+      match /locales/{locale}/answers/{matchAnswer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+
+    match /production_matches/{game} {
+      match /locales/{locale}/answers/{matchAnswer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+
+
+    // ####
+    // Questions Configuration
+    match /development_questions/{question} {
+      match /locales/{locale} {
+        allow read: if true
+        allow write: if signedInAndUid()
+      }
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /preview_questions/{question} {
+      match /locales/{locale} {
+        allow read: if true
+        allow write: if signedInAndUid()
+      }
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /production_questions/{question} {
+      match /locales/{locale} {
+        allow read: if true
+        allow write: if signedInAndUid()
+      }
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+
+
+    // ####
+    // Reward Configuration
+    match /development_rewards_cz/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+    match /development_rewards_sk/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+    match /preview_rewards_cz/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+    match /preview_rewards_sk/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+    match /production_rewards_cz/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+    match /production_rewards_sk/{reward} {
+      allow read, write: if signedInAndUid()
+    }
+
+    // ####
+    // Player Configuration
+    match /development_players_cz/{player} {
+      allow read, write: if signedInAndUid()
+    }
+    match /development_players_sk/{player} {
+      allow read, write: if signedInAndUid()
+    }
+    match /preview_players_cz/{player} {
+      allow read, write: if signedInAndUid()
+    }
+    match /preview_players_sk/{player} {
+      allow read, write: if signedInAndUid()
+    }
+    match /production_players_cz/{player} {
+      allow read, write: if signedInAndUid()
+    }
+    match /production_players_sk/{player} {
+      allow read, write: if signedInAndUid()
+    }
+
+    // ####
+    // How to play Configuration
+    match /development_howToPlay/{howToPlay} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /preview_howToPlay/{howToPlay} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /production_howToPlay/{howToPlay} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+
+
+    // ####
+    // Rules Configuration
+    match /development_rules/{rule} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /preview_rules/{rule} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+    match /production_rules/{rule} {
+      allow read: if true
+      allow write: if signedInAndUid()
+    }
+  }
+}

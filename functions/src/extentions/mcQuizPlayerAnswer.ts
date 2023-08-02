@@ -24,7 +24,7 @@ export class McQuizPlayerAnswerApp {
 
   /**
    *
-   * @param {string} env Environment
+   * @param {string} baseCollection Base collection
    * @param {string} locale Language
    * @param {string} playerId Id of the Player
    * @param {string} playerName Name of the Player
@@ -36,7 +36,7 @@ export class McQuizPlayerAnswerApp {
    * @param {number} wrongAnswerScore Points for wrong answer
    */
   constructor(
-      env: string,
+      baseCollection: string,
       locale: string,
       playerId: string,
       playerName: string,
@@ -47,9 +47,9 @@ export class McQuizPlayerAnswerApp {
       correctAnswerScore: number,
       wrongAnswerScore: number,
   ) {
-    this.matchModel = new McQuizMatchModel(env);
-    this.questionModel = new McQuizQuestionModel(env);
-    this.playersModel = new McQuizPlayersModel(env, locale);
+    this.matchModel = new McQuizMatchModel(baseCollection);
+    this.questionModel = new McQuizQuestionModel(baseCollection);
+    this.playersModel = new McQuizPlayersModel(baseCollection, locale);
 
     this.locale = locale;
     this.playerId = playerId;
