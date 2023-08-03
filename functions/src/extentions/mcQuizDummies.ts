@@ -97,8 +97,6 @@ export class McQuizDummies {
     await this.matchModel.matchSubscribePlayer(
         this.matchId,
         playerId,
-        playerNickname,
-        "bakery",
         "cz"
     );
 

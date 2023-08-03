@@ -40,8 +40,6 @@ export default class McQuizMatchModel {
   public async matchSubscribePlayer(
       matchId: string,
       playerId: string,
-      playerNickname: string,
-      matchPlayerAvatar: string,
       locale: string
   ) {
     const playerRef = this.db.doc(
@@ -50,20 +48,17 @@ export default class McQuizMatchModel {
 
     const data = {
       playerRef,
-      playerId,
-      playerNickname,
       score: 0,
       correctAnswers: 0,
       wrongAnswers: 0,
-      matchPlayerAvatar,
       addedOn: Timestamp.now(),
     };
 
-    const matchPlayerRef = this.db.doc(
-        `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
-    );
-
     try {
+      const matchPlayerRef = this.db.doc(
+          `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
+      );
+
       const matchPlayer = await matchPlayerRef.get();
 
       if (!matchPlayer.exists) await matchPlayerRef.set(data);
@@ -89,11 +84,11 @@ export default class McQuizMatchModel {
       playerId: string,
       locale: string
   ) {
-    const matchPlayerRef = this.db.doc(
-        `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
-    );
-
     try {
+      const matchPlayerRef = this.db.doc(
+          `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
+      );
+
       await matchPlayerRef.delete();
 
       return true;
@@ -105,6 +100,8 @@ export default class McQuizMatchModel {
 
   /**
    * Save player answer.
+   * Note: to avoid player answering multiple time,
+   * we keep 'update' instead of 'set'.
    *
    * @param {string} playerId Player ID.
    * @param {string} playerName Player Name.
@@ -239,7 +236,7 @@ export default class McQuizMatchModel {
     try {
       let matchPlayerRef = this.db.collection(
           `${this.collectionMatchesName}/${matchId}/locales/${locale}/players`
-      ).orderBy(fieldPath, directionStr);
+      ).orderBy(fieldPath, directionStr).limit(100);
 
       if (limit) {
         matchPlayerRef = matchPlayerRef.limit(limit);
@@ -300,7 +297,7 @@ export default class McQuizMatchModel {
    *
    * @param {string} playerId
    * @param {string} matchId
-   * @param {string} ratingScore
+   * @param {number} ratingScore
    * @param {string} ratingComment
    * @param {string} locale
    *
@@ -309,16 +306,13 @@ export default class McQuizMatchModel {
   public async submitPlayerRating(
       playerId: string,
       matchId: string,
-      ratingScore: string,
+      ratingScore: number,
       ratingComment: string,
       locale: string,
   ) {
     const dataMatchPlayer = {
-      reward: {
-        ratingScore,
-        ratingComment,
-        addedOn: Timestamp.now(),
-      },
+      ratingScore,
+      ratingComment,
     };
 
     /* Update Match Player */

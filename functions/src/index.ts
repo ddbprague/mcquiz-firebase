@@ -249,6 +249,7 @@ export const getPlayer =
                   "email": playerData.email,
                   "deviceId": playerData.deviceId,
                   "deviceToken": playerData.deviceToken,
+                  "avatar": playerData.avatar,
                 },
               };
             } catch (e) {
@@ -518,8 +519,6 @@ export const matchSubscribePlayer =
             baseCollection,
             matchId,
             playerId,
-            playerNickname,
-            matchPlayerAvatar,
             locale,
           } = request.data;
 
@@ -542,18 +541,6 @@ export const matchSubscribePlayer =
                   "Missing playerId!"
               );
             }
-            if (!playerNickname) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing playerNickname!"
-              );
-            }
-            if (!matchPlayerAvatar) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing matchPlayerAvatar!"
-              );
-            }
             if (!locale) {
               throw new HttpsError(
                   "failed-precondition",
@@ -569,8 +556,6 @@ export const matchSubscribePlayer =
               await mcQuizMatchModelApp.matchSubscribePlayer(
                   matchId.toString(),
                   playerId.toString(),
-                  playerNickname.toString(),
-                  matchPlayerAvatar.toString(),
                   locale.toString()
               );
             } catch (e) {
@@ -919,12 +904,6 @@ onCall(
               "Missing rewardName!"
           );
         }
-        if (!ratingComment) {
-          throw new HttpsError(
-              "failed-precondition",
-              "Missing rewardLoyaltyId!"
-          );
-        }
         if (!locale) {
           throw new HttpsError(
               "failed-precondition",
@@ -940,19 +919,19 @@ onCall(
           await mcQuizMatchModelApp.submitPlayerRating(
               playerId.toString(),
               matchId.toString(),
-              ratingScore.toString(),
+              Number(ratingScore),
               ratingComment.toString(),
               locale.toString()
           );
         } catch (e) {
           throw new HttpsError(
-              "internal", "Failed to activate coupon for player! ->" + e
+              "internal", "Failed to save player rating! ->" + e
           );
         }
 
         return {
           success: true,
-          message: "Player nickname updated!",
+          message: "Player rating updated!",
         };
       } else {
         throw new HttpsError(
