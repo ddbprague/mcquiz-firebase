@@ -31,8 +31,6 @@ export default class McQuizMatchModel {
    *
    * @param {string} matchId
    * @param {string} playerId
-   * @param {string} playerNickname
-   * @param {string} matchPlayerAvatar
    * @param {string} locale
    *
    * @return {boolean}
@@ -397,7 +395,7 @@ export default class McQuizMatchModel {
    * Count how many players choose this answer.
    *
    * @param {string} matchId Question ID.
-   * @param {string} questionKey Question Id
+   * @param {string} questionKey Question ID.
    * @param {string} choiceKey Choice Key
    * @param {string} locale Language used by player
    *

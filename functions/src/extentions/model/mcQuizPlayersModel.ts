@@ -3,12 +3,13 @@ import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {CreatePlayerData} from "./type";
 
 /**
- * McQuiz Matches DB.
+ * McQuiz Players DB.
  *
  */
 export default class McQuizPlayersModel {
   private readonly db: FirebaseFirestore.Firestore;
   private readonly collectionPlayersName: string;
+  private readonly collectionMatchesName: string;
 
   /**
    * @param {string} baseCollection Base collection.
@@ -20,6 +21,7 @@ export default class McQuizPlayersModel {
   ) {
     this.db = admin.firestore();
     this.collectionPlayersName = `${baseCollection}_players_${locale}`;
+    this.collectionMatchesName = `${baseCollection}_matches`;
   }
 
 
@@ -236,8 +238,8 @@ export default class McQuizPlayersModel {
       totalQuestions: FieldValue.increment(1),
       totalCorrectAnswers: FieldValue.increment(playerScoreData.correctAnswers),
       totalWrongAnswers: FieldValue.increment(playerScoreData.wrongAnswers),
-      gamesPlayed: FieldValue.arrayUnion(this.db.doc("matches/" + matchId)),
-      lastGame: this.db.doc("matches/" + matchId),
+      gamesPlayed: FieldValue.arrayUnion(this.db.doc(`${this.collectionMatchesName}/${matchId}`)),
+      lastGame: this.db.doc(`${this.collectionMatchesName}/${matchId}`),
       updatedOn: Timestamp.now(),
     };
 

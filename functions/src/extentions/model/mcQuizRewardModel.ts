@@ -1,7 +1,7 @@
 import McQuizMatchModel from "./mcQuizMatchModel";
 
 /**
- * McQuiz Questions DB.
+ * McQuiz Rewards DB.
  *
  */
 export default class McQuizRewardModel {

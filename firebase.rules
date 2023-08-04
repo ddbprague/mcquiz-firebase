@@ -5,7 +5,7 @@ service cloud.firestore {
 
     // Access only to some authors and Firebase Function
     function signedInAndUid() {
-      return request.auth.uid == "xhxdeqaYWS6hejwPfuX8Du92aYoc" || request.auth.uid == "other";
+      return request.auth.uid == "xhxdeqaYWS6hejwPfuX8Du92aYoc" || request.auth.uid == "0R0KpYxGBcUOFagBLV9DgRpKpaf2" || request.auth.uid == "other";
     }
 
 

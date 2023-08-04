@@ -4,7 +4,7 @@ import McQuizPlayersModel from "./model/mcQuizPlayersModel";
 import {scoreForPlayer} from "./inc/mcQuizScoresCalculator";
 
 /**
- * McQuiz Match Extension
+ * McQuiz Players Statistics Extension
  *
  */
 export class McQuizPlayerAnswerApp {
