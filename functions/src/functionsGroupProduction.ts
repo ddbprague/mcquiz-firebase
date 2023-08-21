@@ -481,8 +481,6 @@ export const matchGetPlayerRewardInfo =
                 };
               }
 
-              console.log(reward);
-
               return {
                 success: true,
                 reward,

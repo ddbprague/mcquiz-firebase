@@ -83,13 +83,14 @@ export default class McQuizMatchModel {
       locale: string
   ) {
     try {
-      const matchPlayerRef = this.db.doc(
-          `${this.collectionMatchesName}/${matchId}/locales/${locale}/players/${playerId}`
-      );
-
-      await matchPlayerRef.delete();
-
-      return true;
+      await this.db
+          .collection(
+              `${this.collectionMatchesName}/${matchId}/locales/${locale}/players`
+          )
+          .doc(
+              `${playerId}`
+          )
+          .delete();
     } catch (e) {
       throw new Error("Failed to unsubscribe player to match! ->" + e);
     }
