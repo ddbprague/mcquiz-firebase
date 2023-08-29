@@ -112,12 +112,6 @@ export const createPlayer =
                   "Missing playerFirstName!"
               );
             }
-            if (!playerLastName) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing playerLastName!"
-              );
-            }
             if (!playerEmail) {
               throw new HttpsError(
                   "failed-precondition",
@@ -336,6 +330,87 @@ export const getPlayersStatistics =
  * Note: Cloud Function V2.
  *
  */
+export const getMatchQuestionAnswersStatistics =
+    onCall(
+        {
+          region: "europe-west1",
+        },
+        async (request) => {
+          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
+
+          const {
+            key,
+            baseCollection,
+            matchId,
+            questionKey,
+            locale,
+          } = request.data;
+
+          if (cKey === key) {
+            if (!baseCollection) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing baseCollection!"
+              );
+            }
+            if (!matchId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing matchId!"
+              );
+            }
+            if (!questionKey) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing questionKey!"
+              );
+            }
+            if (!locale) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing locale!"
+              );
+            }
+
+            try {
+              const mcQuizMatchModelApp = new McQuizMatchModel(
+                  baseCollection.toString(),
+              );
+
+              const questionAnswerStatistics = await mcQuizMatchModelApp.getMatchQuestionAnswersStatistics(
+                  matchId.toString(),
+                  questionKey.toString(),
+                  locale.toString()
+              );
+
+              if (!questionAnswerStatistics.exists) {
+                return {
+                  success: false,
+                };
+              }
+
+              return {
+                success: true,
+                statistics: questionAnswerStatistics.data(),
+              };
+            } catch (e) {
+              throw new HttpsError(
+                  "internal", "Failed to get question answers statistics statistics! ->" + e
+              );
+            }
+          } else {
+            throw new HttpsError(
+                "failed-precondition", "Error!"
+            );
+          }
+        }
+    );
+
+
+/**
+ * Note: Cloud Function V2.
+ *
+ */
 export const matchGetRewardInfo =
     onCall(
         {
@@ -372,12 +447,12 @@ export const matchGetRewardInfo =
             }
 
             try {
-              const mcQuizMatchModelApp = new McQuizRewardModel(
+              const mcQuizRewardModelApp = new McQuizRewardModel(
                   baseCollection.toString(),
                   locale.toString(),
               );
 
-              const reward = await mcQuizMatchModelApp.getReward(
+              const reward = await mcQuizRewardModelApp.getReward(
                   matchId,
               );
 
@@ -393,11 +468,13 @@ export const matchGetRewardInfo =
               return {
                 success: true,
                 rewards: {
+                  icon: data.rewardIcon,
+                  image: data.rewardImage,
                   standard: {
                     name: data.standardReward.rewardName,
                     image: data.standardReward.rewardImage,
                   },
-                  premiumReward: {
+                  premium: {
                     name: data.premiumReward.rewardName,
                     image: data.premiumReward.rewardImage,
                   },
@@ -464,12 +541,12 @@ export const matchGetPlayerRewardInfo =
             }
 
             try {
-              const mcQuizMatchModelApp = new McQuizRewardModel(
+              const mcQuizRewardModelApp = new McQuizRewardModel(
                   baseCollection.toString(),
                   locale.toString(),
               );
 
-              const reward = await mcQuizMatchModelApp.getRewardWithPlayerId(
+              const reward = await mcQuizRewardModelApp.getRewardWithPlayerId(
                   matchId,
                   playerId,
               );

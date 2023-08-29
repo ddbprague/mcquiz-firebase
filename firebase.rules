@@ -5,7 +5,7 @@ service cloud.firestore {
 
     // Access only to some authors and Firebase Function
     function signedInAndUid() {
-      return request.auth.uid == "xhxdeqaYWS6hejwPfuX8Du92aYoc" || request.auth.uid == "0R0KpYxGBcUOFagBLV9DgRpKpaf2" || request.auth.uid == "other";
+      return request.auth.uid == "xhxdeqaYWS6hejwPfuX8Du92aYoc" || request.auth.uid == "0R0KpYxGBcUOFagBLV9DgRpKpaf2" ||  request.auth.uid == "lJbouoEJXMgrDvXS2zbNuAaa4os2" || request.auth.uid == "other";
     }
 
 
@@ -13,11 +13,12 @@ service cloud.firestore {
     // Match Configuration
     match /development_matches/{game} {
       match /locales/{locale}/answers/{matchAnswer} {
-        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
-        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {
         allow read, write: if signedInAndUid()
       }
       allow read: if true
@@ -26,11 +27,12 @@ service cloud.firestore {
 
     match /preview_matches/{game} {
       match /locales/{locale}/answers/{matchAnswer} {
-        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
-        allow list: if true
+        allow read, write: if signedInAndUid()
+      }
+      match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {
         allow read, write: if signedInAndUid()
       }
       allow read: if true
@@ -39,14 +41,14 @@ service cloud.firestore {
 
     match /production_matches/{game} {
       match /locales/{locale}/answers/{matchAnswer} {
-        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
-        allow list: if true
         allow read, write: if signedInAndUid()
       }
-
+      match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {
+        allow read, write: if signedInAndUid()
+      }
       allow read: if true
       allow write: if signedInAndUid()
     }

@@ -218,7 +218,7 @@ export default class McQuizMatchModel {
   /**
    * Get match players.
    *
-   * @param {string} matchId Question ID.
+   * @param {string} matchId Match ID.
    * @param {string} locale Language used by player.
    * @param {string} fieldPath Order Field.
    * @param {"desc" | "asc"} directionStr Order Direction.
@@ -244,6 +244,31 @@ export default class McQuizMatchModel {
       return await matchPlayerRef.get();
     } catch (e) {
       throw new Error("Failed to get match players! ->" + e);
+    }
+  }
+
+
+  /**
+   * Get question answers statistics.
+   *
+   * @param {string} matchId Match ID.
+   * @param {string} questionKey Question Key.
+   * @param {string} locale Language used by player.
+   *
+   */
+  public async getMatchQuestionAnswersStatistics(
+      matchId: string,
+      questionKey: string,
+      locale: string,
+  ) {
+    try {
+      const matchQuestionAnswersStatisticsRef = this.db.doc(
+          `${this.collectionMatchesName}/${matchId}/locales/${locale}/questionAnswersStatistics/${questionKey}`
+      );
+
+      return await matchQuestionAnswersStatisticsRef.get();
+    } catch (e) {
+      throw new Error("Failed to get player answers statistics! ->" + e);
     }
   }
 
