@@ -28,7 +28,7 @@ export default class McQuizRewardModel {
    * @param {any} matchId Match ID.
    * @return {Promise<DocumentSnapshot<DocumentData>>}
    */
-  public async getReward(
+  public async getRewards(
       matchId: string
   ) {
     try {
@@ -55,14 +55,22 @@ export default class McQuizRewardModel {
   /**
    * Get reward with match ID and player ID.
    *
-   * @param {any} matchId Match ID.
-   * @param {any} playerId Player ID.
+   * @param {string} matchId Match ID.
+   * @param {string} playerId Player ID.
+   * @param {number} playerPosition Player Position.
+   * @param {number} playerTotalAnswers Total Answer.
    * @return {Promise<DocumentSnapshot<DocumentData>>}
    */
   public async getRewardWithPlayerId(
       matchId: string,
-      playerId: string
+      playerId: string,
+      playerPosition: number,
+      playerTotalAnswers: number
   ) {
+    if (!playerTotalAnswers) {
+      return null;
+    }
+
     try {
       const mcQuizMatchModelApp = new McQuizMatchModel(
           this.baseCollection
@@ -82,27 +90,11 @@ export default class McQuizRewardModel {
         return null;
       }
 
-      const matchPlayers = await mcQuizMatchModelApp.getMatchPlayers(matchId, this.locale, "score", "asc");
-
-      let countPlayerPosition = 0;
-      let shouldSkip = false;
-      matchPlayers.forEach((document) => {
-        const data = document.data();
-        if (shouldSkip) {
-          return;
-        }
-        if (data.playerId === playerId) {
-          shouldSkip = true;
-        }
-
-        countPlayerPosition++;
-      });
-
       const rewardData = reward.data();
 
       return {
         loyaltyId: rewardData.loyaltyId,
-        reward: countPlayerPosition > 10? rewardData.standardReward : rewardData.premiumReward,
+        reward: playerPosition > 100? rewardData.standardReward : rewardData.premiumReward,
       };
     } catch (e) {
       throw new Error("Failed to get reward! ->" + e);

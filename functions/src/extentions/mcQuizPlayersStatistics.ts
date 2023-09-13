@@ -1,5 +1,6 @@
 import McQuizMatchModel from "./model/mcQuizMatchModel";
 import McQuizPlayersModel from "./model/mcQuizPlayersModel";
+import McQuizRewardModel from "./model/mcQuizRewardModel";
 
 /**
  * McQuiz Match Extension
@@ -8,13 +9,17 @@ import McQuizPlayersModel from "./model/mcQuizPlayersModel";
 export class McQuizPlayersStatisticsApp {
   private readonly matchModel: McQuizMatchModel;
   private readonly playersModel: McQuizPlayersModel;
+  private readonly rewardModel: McQuizRewardModel;
 
   private readonly locale: string;
   private readonly playerId: string;
   private readonly matchId: string;
+  private readonly withReward: boolean;
 
   private playersStatistics: any[];
   private totalPlayers: number;
+  private playerPosition: number;
+  private playerTotalAnswers: number;
 
   private readonly scorePath: string;
   private readonly correctAnswersPath: string;
@@ -26,22 +31,28 @@ export class McQuizPlayersStatisticsApp {
    * @param {string} locale Language.
    * @param {string} playerId Id of the Player.
    * @param {string} matchId Id  of the Match.
+   * @param {boolean} withReward Must include player reward.
    */
   constructor(
       baseCollection: string,
       locale: string,
       playerId: string,
       matchId: string,
+      withReward: boolean,
   ) {
     this.matchModel = new McQuizMatchModel(baseCollection);
     this.playersModel = new McQuizPlayersModel(baseCollection, locale);
+    this.rewardModel = new McQuizRewardModel(baseCollection, locale);
 
     this.locale = locale;
     this.playerId = playerId;
     this.matchId = matchId;
+    this.withReward = withReward;
 
     this.playersStatistics = [];
     this.totalPlayers = 0;
+    this.playerPosition = 0;
+    this.playerTotalAnswers = 0;
     this.scorePath = this.matchId ? "score" : "totalScore";
     this.correctAnswersPath = this.matchId ? "correctAnswers" : "totalCorrectAnswers";
     this.wrongAnswersPath = this.matchId ? "wrongAnswers" : "totalWrongAnswers";
@@ -53,15 +64,20 @@ export class McQuizPlayersStatisticsApp {
    * @return {boolean}
    */
   async init() {
-    console.log("-== Start Players Statistics ==-");
-
     await this.processPlayersStatistics();
 
-    console.log("-== Tasks Over ==-");
+    const playerReward = this.withReward?
+     await this.rewardModel.getRewardWithPlayerId(
+         this.matchId,
+         this.playerId,
+         this.playerPosition,
+         this.playerTotalAnswers,
+     ) : null;
 
     return {
       playersStatistics: this.playersStatistics.filter((element) => element !== undefined),
       totalPlayers: this.totalPlayers,
+      playerReward,
     };
   }
 
@@ -71,33 +87,31 @@ export class McQuizPlayersStatisticsApp {
    */
   private async processPlayersStatistics(
   ) {
-    console.log("-= processPlayerStatistics =-");
     const playersSnapshot =
-    this.matchId?
-    await this.matchModel.getMatchPlayers(this.matchId, this.locale, "score", "desc") :
-    await this.playersModel.getPlayers("totalScore", "desc");
+      this.matchId?
+        await this.matchModel.getMatchPlayers(this.matchId, this.locale, "score", "desc") :
+        await this.playersModel.getPlayers("totalScore", "desc");
 
-    this.totalPlayers = playersSnapshot.docs.length;
-
+    this.totalPlayers = playersSnapshot.size;
 
     let position = 0;
+    this.playerPosition = playersSnapshot.size;
 
-    // 1- Prepare first 10 players
-    this.playersStatistics = await Promise.all(
-        playersSnapshot.docs.map(async (playerDoc) => {
-          const isPlayer = playerDoc.id === this.playerId;
+    if (this.matchId && !playersSnapshot.size) {
+      const playerStatistics = await this.prepareDummyData(this.playerId);
+      this.playersStatistics.push(playerStatistics);
+    } else {
+      let playerInStatistic = false;
+      this.playersStatistics = await Promise.all(
+          playersSnapshot.docs.map(async (playerDoc) => {
+            const isPlayer = playerDoc.id === this.playerId;
+            playerInStatistic = playerInStatistic?? isPlayer;
+            position++;
 
-          console.log("start player", this.totalPlayers, playerDoc.id);
-
-          position++;
-
-          const playerStatistics = await this.prepareData(playerDoc, isPlayer, position);
-
-          console.log("stop player", this.totalPlayers, playerDoc.id);
-
-          return playerStatistics;
-        })
-    );
+            return await this.prepareData(playerDoc, isPlayer, position);
+          })
+      );
+    }
   }
 
   /**
@@ -113,13 +127,8 @@ export class McQuizPlayersStatisticsApp {
       isPlayer: boolean,
       position: number
   ) {
-    console.log("-= prepareData =-");
-
     if (position <= 10 || isPlayer) {
       const playerData = playerDoc.data();
-
-      console.log(playerData.score);
-
       const playerInfoData = this.matchId? await this.getPlayerInfoData(playerDoc.id) : null;
 
       if (this.matchId && !playerInfoData) {
@@ -130,7 +139,13 @@ export class McQuizPlayersStatisticsApp {
       const totalCorrectAnswers = playerData[this.correctAnswersPath];
       const totalWrongAnswers = playerData[this.wrongAnswersPath];
 
-      console.log(position, playerData[this.scorePath]);
+      if (this.matchId && isPlayer) {
+        this.playerTotalAnswers = this.matchId? totalCorrectAnswers + totalWrongAnswers : playerData.totalQuestions;
+      }
+
+      if (isPlayer) {
+        this.playerPosition = position;
+      }
 
       return {
         isPlayer,
@@ -148,6 +163,33 @@ export class McQuizPlayersStatisticsApp {
   }
 
   /**
+   * Prepare player statistics dummy data if no result at all.
+   *
+   * @param {string} playerId Player ID.
+   *
+   */
+  private async prepareDummyData(
+      playerId: string,
+  ) {
+    const playerInfoData = this.matchId? await this.getPlayerInfoData(playerId) : null;
+
+    if (this.matchId && !playerInfoData) {
+      return;
+    }
+
+    return {
+      isPlayer: true,
+      nickname: playerInfoData?.nickname,
+      avatar: playerInfoData?.avatar? playerInfoData.avatar : "big-mac",
+      position: null,
+      score: 0,
+      totalAnswers: 0,
+      totalCorrectAnswers: 0,
+      totalWrongAnswers: 0,
+    };
+  }
+
+  /**
    * Get player avatar;
    *
    * @param {string} playerId Player Id.
@@ -156,8 +198,6 @@ export class McQuizPlayersStatisticsApp {
   private async getPlayerInfoData(
       playerId: string
   ) {
-    console.log("-= getPlayerInfo =-");
-
     const player = await this.playersModel.getPlayer(
         playerId.toString(),
     );

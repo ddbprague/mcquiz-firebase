@@ -43,6 +43,30 @@ export default class McQuizQuestionModel {
 
 
   /**
+   * Get question with ID.
+   *
+   * @param {string} questionId
+   *
+   * @return {Promise<QuerySnapshot<DocumentData>>}
+   * QuerySnapshot<DocumentData>.
+   */
+  public async getQuestionWithId(
+      questionId: string,
+  ) {
+    try {
+      const questionRef = this.db
+          .doc(
+              `${this.collectionQuestionsName}/${questionId}`
+          );
+
+      return await questionRef.get();
+    } catch (e) {
+      throw new Error("Failed to get question! ->" + e);
+    }
+  }
+
+
+  /**
    * Get choices with question ID.
    *
    * @param {string} questionId Question ID.

@@ -42,9 +42,7 @@ export class McQuizMatchApp {
     console.log("Start task");
 
     const tasks =
-    !this.debugMode?
-    await this.matchModel.getNextMatch(this.secondsAdded) :
-    await this.matchModel.getAllMatch();
+      !this.debugMode? await this.matchModel.getNextMatch(this.secondsAdded) : await this.matchModel.getAllMatch();
 
     await Promise.all(tasks.docs.map(async (snapshotMatch) => {
       console.log("-== Proceed Match ==-");
@@ -65,7 +63,7 @@ export class McQuizMatchApp {
       snapshotMatch:
       FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>
   ) {
-    // Update status to ready to Avoid game being launched 2 times
+    // Update status to ready to avoid game being launched 2 times
     await this.matchModel.updateStatus(snapshotMatch, {"status": "ready"});
 
     // Get Match data
@@ -75,14 +73,11 @@ export class McQuizMatchApp {
     // Calculate remaining time before starting
     const {seconds, nanoseconds} = data.startingAt;
 
-    const startingAt = new Timestamp(
-        parseInt(seconds), parseInt(nanoseconds)
-    ).toMillis();
+    const startingAt = new Timestamp(parseInt(seconds), parseInt(nanoseconds)).toMillis();
     const now = new Date();
     const timeRemainingMs = startingAt - now.getTime();
     const resultTimeLimit = data.resultTimeLimit * 1000;
     const totalQuestions = data.questions.length;
-
 
     // Prepare questions for the match
     const questions = [];

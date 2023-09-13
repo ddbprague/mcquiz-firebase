@@ -16,12 +16,14 @@ service cloud.firestore {
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {
         allow read, write: if signedInAndUid()
       }
       allow read: if true
+      allow get: if signedInAndUid()
       allow write: if signedInAndUid()
     }
 
@@ -30,6 +32,7 @@ service cloud.firestore {
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {
@@ -44,6 +47,7 @@ service cloud.firestore {
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/players/{matchPlayer} {
+        allow list: if true
         allow read, write: if signedInAndUid()
       }
       match /locales/{locale}/questionAnswersStatistics/{matchQuestionAnswersStatistics} {

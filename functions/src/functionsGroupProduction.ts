@@ -6,7 +6,10 @@ import McQuizPlayersModel from "./extentions/model/mcQuizPlayersModel";
 import McQuizMatchModel from "./extentions/model/mcQuizMatchModel";
 import McQuizRewardModel from "./extentions/model/mcQuizRewardModel";
 import {McQuizPlayersStatisticsApp} from "./extentions/mcQuizPlayersStatistics";
+import McQuizQuestionModel from "./extentions/model/mcQuizQuestionModel";
+import {getStorage, getDownloadURL} from "firebase-admin/storage";
 
+const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
 
 /**
  * Note: Cloud Function V2.
@@ -50,6 +53,8 @@ export const matchRunner =
 /**
  * Note: Cloud Function V2.
  *
+ * This is not a latency-critical function.
+ *
  */
 export const createPlayer =
     onCall(
@@ -57,8 +62,6 @@ export const createPlayer =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -183,6 +186,8 @@ export const createPlayer =
 /**
  * Note: Cloud Function V2.
  *
+ * This is not a latency-critical function.
+ *
  */
 export const getPlayer =
     onCall(
@@ -190,8 +195,6 @@ export const getPlayer =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -261,6 +264,9 @@ export const getPlayer =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in Profile Page.
+ * This is not a latency-critical function.
+ *
  */
 export const getPlayersStatistics =
     onCall(
@@ -268,13 +274,12 @@ export const getPlayersStatistics =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
             playerId,
             matchId,
+            withReward,
             locale,
           } = request.data;
 
@@ -291,6 +296,18 @@ export const getPlayersStatistics =
                   "Missing playerId!"
               );
             }
+            if (typeof matchId === "undefined" ) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing matchId!"
+              );
+            }
+            if (typeof withReward === "undefined" ) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing withReward!"
+              );
+            }
             if (!locale) {
               throw new HttpsError(
                   "failed-precondition",
@@ -303,7 +320,8 @@ export const getPlayersStatistics =
                   baseCollection.toString(),
                   locale.toString(),
                   playerId.toString(),
-                        matchId? matchId.toString() : null,
+                  matchId? matchId.toString() : null,
+                  withReward,
               );
 
               const statistics = await mcQuizPlayersModelApp.init();
@@ -329,15 +347,17 @@ export const getPlayersStatistics =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in-match
+ * This is a latency-critical function.
+ *
  */
 export const getMatchQuestionAnswersStatistics =
     onCall(
         {
           region: "europe-west1",
+          minInstances: 1,
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -410,15 +430,16 @@ export const getMatchQuestionAnswersStatistics =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in home page.
+ * This is not a latency-critical function.
+ *
  */
-export const matchGetRewardInfo =
+export const nextMatchGetRewardInfo =
     onCall(
         {
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -452,37 +473,34 @@ export const matchGetRewardInfo =
                   locale.toString(),
               );
 
-              const reward = await mcQuizRewardModelApp.getReward(
+              const rewards = await mcQuizRewardModelApp.getRewards(
                   matchId,
               );
 
-              if (!reward || !reward.exists) {
+              if (!rewards || !rewards.exists) {
                 return {
                   success: false,
-                  message: "No reward with this ref",
+                  message: "Failed to get rewards info!",
                 };
               }
 
-              const data = reward.data();
+              const rewardsData = rewards.data();
+
+              const storage = getStorage().bucket("mcquiz-global.appspot.com");
+
+              const iconFileRef = storage.file(rewardsData?.rewardIcon);
+              const imageFileRef = storage.file(rewardsData?.rewardImage);
 
               return {
                 success: true,
                 rewards: {
-                  icon: data.rewardIcon,
-                  image: data.rewardImage,
-                  standard: {
-                    name: data.standardReward.rewardName,
-                    image: data.standardReward.rewardImage,
-                  },
-                  premium: {
-                    name: data.premiumReward.rewardName,
-                    image: data.premiumReward.rewardImage,
-                  },
+                  icon: await getDownloadURL(iconFileRef),
+                  image: await getDownloadURL(imageFileRef),
                 },
               };
             } catch (e) {
               throw new HttpsError(
-                  "internal", "Failed to det reward info! ->" + e
+                  "internal", "Failed to get rewards info! ->" + e
               );
             }
           } else {
@@ -497,19 +515,22 @@ export const matchGetRewardInfo =
 /**
  * Note: Cloud Function V2.
  *
+ * Called when connecting to the match.
+ * This is a latency-critical function.
+ *
  */
-export const matchGetPlayerRewardInfo =
+export const matchSubscribePlayerGetQuestionsGetRewards =
     onCall(
         {
           region: "europe-west1",
+          minInstances: 1,
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
             matchId,
+            questionsId,
             playerId,
             locale,
           } = request.data;
@@ -527,6 +548,12 @@ export const matchGetPlayerRewardInfo =
                   "Missing matchId!"
               );
             }
+            if (!questionsId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing questionsId!"
+              );
+            }
             if (!playerId) {
               throw new HttpsError(
                   "failed-precondition",
@@ -541,107 +568,92 @@ export const matchGetPlayerRewardInfo =
             }
 
             try {
+              const storage = getStorage().bucket("mcquiz-global.appspot.com");
+
+              const questionModel = new McQuizQuestionModel(baseCollection);
               const mcQuizRewardModelApp = new McQuizRewardModel(
                   baseCollection.toString(),
                   locale.toString(),
               );
-
-              const reward = await mcQuizRewardModelApp.getRewardWithPlayerId(
-                  matchId,
-                  playerId,
-              );
-
-              if (!reward) {
-                return {
-                  success: false,
-                  message: "No reward with this ref",
-                };
-              }
-
-              return {
-                success: true,
-                reward,
-              };
-            } catch (e) {
-              throw new HttpsError(
-                  "internal", "Failed to det reward info! ->" + e
-              );
-            }
-          } else {
-            throw new HttpsError(
-                "failed-precondition", "Error!"
-            );
-          }
-        }
-    );
-
-
-/**
- * Note: Cloud Function V2.
- *
- */
-export const matchSubscribePlayer =
-    onCall(
-        {
-          region: "europe-west1",
-        },
-        async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
-          const {
-            key,
-            baseCollection,
-            matchId,
-            playerId,
-            locale,
-          } = request.data;
-
-          if (cKey === key) {
-            if (!baseCollection) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing baseCollection!"
-              );
-            }
-            if (!matchId) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing matchId!"
-              );
-            }
-            if (!playerId) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing playerId!"
-              );
-            }
-            if (!locale) {
-              throw new HttpsError(
-                  "failed-precondition",
-                  "Missing locale!"
-              );
-            }
-
-            try {
               const mcQuizMatchModelApp = new McQuizMatchModel(
                   baseCollection.toString(),
               );
 
+              /* 1 - GET MATCH QUESTIONS */
+              const questions = [];
+
+              // Prepare questions
+              for (const [index, questionId] of questionsId.entries()) {
+                const questionSnapshot = await questionModel.getQuestionWithId(questionId);
+                const questionData = questionSnapshot.data();
+
+                const fileRef = storage.file(questionData?.image);
+                const image= await getDownloadURL(fileRef);
+
+                const questionChoices = await questionModel.getQuestionChoices(questionId, locale);
+                const questionChoicesData = questionChoices.data();
+
+                questions.push({
+                  _key: questionId,
+                  questionNumber: index + 1,
+                  title: questionChoicesData?.title,
+                  explanation: questionChoicesData?.explanation,
+                  choices: questionChoicesData?.choices,
+                  timeLimit: questionData?.timeLimit,
+                  image,
+                });
+              }
+
+              /* 2 - GET MATCH REWARDS */
+              const rewardsSnapshot = await mcQuizRewardModelApp.getRewards(
+                  matchId,
+              );
+
+              let rewards = null;
+
+              if (rewardsSnapshot.exists) {
+                const rewardsData = rewardsSnapshot.data();
+
+                const iconFileRef = storage.file(rewardsData?.rewardIcon);
+                const imageFileRef = storage.file(rewardsData?.rewardImage);
+                const standardRewardImageFileRef = storage.file(rewardsData?.standardReward.rewardImage);
+                const premiumRewardImageFileRef = storage.file(rewardsData?.premiumReward.rewardImage);
+
+                rewards = {
+                  icon: await getDownloadURL(iconFileRef),
+                  image: await getDownloadURL(imageFileRef),
+                  standard: {
+                    name: rewardsData.standardReward.rewardName,
+                    image: await getDownloadURL(standardRewardImageFileRef),
+                  },
+                  premium: {
+                    name: rewardsData.premiumReward.rewardName,
+                    image: await getDownloadURL(premiumRewardImageFileRef),
+                  },
+                };
+              }
+
+
+              /* 3 - SUBSCRIBE PLAYER TO MATCH */
               await mcQuizMatchModelApp.matchSubscribePlayer(
                   matchId.toString(),
                   playerId.toString(),
                   locale.toString()
               );
+
+              return {
+                success: true,
+                message: "Player subscribed and data retrieved!",
+                questionsRewards: {
+                  questions,
+                  rewards,
+                },
+              };
             } catch (e) {
               throw new HttpsError(
-                  "internal", "Failed to subscribe player to game! ->" + e
+                  "internal", "Failed to subscribe player to game or get questions or get rewards! ->" + e
               );
             }
-
-            return {
-              success: true,
-              message: "Player subscribed!",
-            };
           } else {
             throw new HttpsError(
                 "failed-precondition", "Error!"
@@ -653,6 +665,9 @@ export const matchSubscribePlayer =
 
 /**
  * Note: Cloud Function V2.
+ *
+ * Called when leaving the match.
+ * This is not a latency-critical function.
  *
  */
 export const matchUnSubscribePlayer =
@@ -661,8 +676,6 @@ export const matchUnSubscribePlayer =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -729,15 +742,17 @@ export const matchUnSubscribePlayer =
 /**
  * Note: Cloud Function V2.
  *
+ * Called when in-game.
+ * This is a latency-critical function.
+ *
  */
 export const matchSubmitPlayerAnswer =
     onCall(
         {
           region: "europe-west1",
+          minInstances: 1, // Keep 10 instances warm for this latency-critical function
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -836,6 +851,9 @@ export const matchSubmitPlayerAnswer =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in match final result.
+ * This is not a latency-critical function.
+ *
  */
 export const matchSubmitPlayerCouponActivation =
     onCall(
@@ -843,8 +861,6 @@ export const matchSubmitPlayerCouponActivation =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -935,6 +951,9 @@ export const matchSubmitPlayerCouponActivation =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in match final result.
+ * BUT This is not a latency-critical function.
+ *
  */
 export const matchSubmitPlayerRating =
     onCall(
@@ -942,8 +961,6 @@ export const matchSubmitPlayerRating =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -1020,6 +1037,9 @@ export const matchSubmitPlayerRating =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in profile and match waiting room.
+ * This is not a latency-critical function.
+ *
  */
 export const playerUpdateAvatar =
     onCall(
@@ -1027,8 +1047,6 @@ export const playerUpdateAvatar =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,
@@ -1095,6 +1113,9 @@ export const playerUpdateAvatar =
 /**
  * Note: Cloud Function V2.
  *
+ * Called in profile page.
+ * This is not a latency-critical function.
+ *
  */
 export const playerUpdateNickname =
     onCall(
@@ -1102,8 +1123,6 @@ export const playerUpdateNickname =
           region: "europe-west1",
         },
         async (request) => {
-          const cKey = "O42PksS42Df18sSDEezer--8e/=AAdl";
-
           const {
             key,
             baseCollection,

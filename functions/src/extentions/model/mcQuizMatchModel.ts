@@ -268,7 +268,7 @@ export default class McQuizMatchModel {
 
       return await matchQuestionAnswersStatisticsRef.get();
     } catch (e) {
-      throw new Error("Failed to get player answers statistics! ->" + e);
+      throw new Error("Failed to get question answers statistics! ->" + e);
     }
   }
 
