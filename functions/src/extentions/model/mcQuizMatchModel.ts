@@ -151,7 +151,7 @@ export default class McQuizMatchModel {
 
 
   /**
-   * Return the next match within the seconds added.
+   * Return the match.
    *
    * @param {number} matchId Match ID.
    *

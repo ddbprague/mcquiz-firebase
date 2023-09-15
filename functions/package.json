@@ -7,7 +7,7 @@
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
-    "kill": "npx kill-port --port 4000 && npx kill-port --port 4400 && npx kill-port --port 4500 && npx kill-port --port 5002",
+    "kill": "npx kill-port --port 4000 && npx kill-port --port 4400 && npx kill-port --port 4500 && npx kill-port --port 5002&& npx kill-port --port 8059",
     "delete": "firebase functions:delete production --project mcquiz-global",
     "deploy": "firebase deploy --project mcquiz-global --only functions:production",
     "deploy:rules": "firebase deploy --project mcquiz-global --only firestore:rules",

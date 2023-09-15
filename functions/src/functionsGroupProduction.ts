@@ -666,6 +666,124 @@ export const matchSubscribePlayerGetQuestionsGetRewards =
 /**
  * Note: Cloud Function V2.
  *
+ * Called when connecting to the match.
+ * This is a latency-critical function.
+ *
+ */
+export const matchGetQuestions =
+    onCall(
+        {
+          region: "europe-west1",
+          minInstances: 1,
+        },
+        async (request) => {
+          const {
+            key,
+            baseCollection,
+            matchId,
+            questionsId,
+            locale,
+          } = request.data;
+
+          if (cKey === key) {
+            if (!baseCollection) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing baseCollection!"
+              );
+            }
+            if (!matchId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing matchId!"
+              );
+            }
+            if (!questionsId) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing questionsId!"
+              );
+            }
+            if (!locale) {
+              throw new HttpsError(
+                  "failed-precondition",
+                  "Missing locale!"
+              );
+            }
+
+            try {
+              const storage = getStorage().bucket("mcquiz-global.appspot.com");
+
+              const questionModel = new McQuizQuestionModel(baseCollection);
+              const mcQuizMatchModelApp = new McQuizMatchModel(
+                  baseCollection.toString(),
+              );
+
+              /* 1 - CHECK MATCH TO AVOID CHEATING */
+              const querySnapshot = await mcQuizMatchModelApp.getMatch(matchId.toString());
+              if (!querySnapshot.exists) {
+                return {
+                  success: false,
+                  message: "This match doesn't exist!",
+                };
+              }
+
+              const matchData = querySnapshot.data();
+
+              if (matchData?.status !== "completed") {
+                return {
+                  success: false,
+                  message: "This match is not available!",
+                };
+              }
+
+              /* 2 - GET MATCH QUESTIONS */
+              const questions = [];
+
+              // Prepare questions
+              for (const [index, questionId] of questionsId.entries()) {
+                const questionSnapshot = await questionModel.getQuestionWithId(questionId);
+                const questionData = questionSnapshot.data();
+
+                const fileRef = storage.file(questionData?.image);
+                const image= await getDownloadURL(fileRef);
+
+                const questionChoices = await questionModel.getQuestionChoices(questionId, locale);
+                const questionChoicesData = questionChoices.data();
+
+                questions.push({
+                  _key: questionId,
+                  questionNumber: index + 1,
+                  title: questionChoicesData?.title,
+                  explanation: questionChoicesData?.explanation,
+                  choices: questionChoicesData?.choices,
+                  timeLimit: questionData?.timeLimit,
+                  image,
+                });
+              }
+
+              return {
+                success: true,
+                message: "Questions data retrieved!",
+                questions,
+              };
+            } catch (e) {
+              throw new HttpsError(
+                  "internal", "Failed to subscribe player to game or get questions or get rewards! ->" + e
+              );
+            }
+          } else {
+            throw new HttpsError(
+                "failed-precondition", "Error!"
+            );
+          }
+        }
+    );
+
+
+/**
+ * Note: Cloud Function V2.
+ *
  * Called when leaving the match.
  * This is not a latency-critical function.
  *
