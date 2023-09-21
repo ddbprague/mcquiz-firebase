@@ -14,16 +14,19 @@ export class McQuizMatchApp {
   private readonly questionModel: McQuizQuestionModel;
 
   private readonly secondsAdded: number;
+  private readonly minutesLobbyOpened: number;
   private readonly debugMode: boolean;
 
   /**
    *
    * @param {number} secondsAdded Second before the match should start.
+   * @param {number} minutesLobbyOpened Minute lobby is opened.
    * @param {string} env
    * @param {boolean} debugMode
    */
   constructor(
       secondsAdded: number,
+      minutesLobbyOpened: number,
       env: string,
       debugMode= false
   ) {
@@ -31,6 +34,7 @@ export class McQuizMatchApp {
     this.questionModel = new McQuizQuestionModel(env);
 
     this.secondsAdded = secondsAdded;
+    this.minutesLobbyOpened = minutesLobbyOpened;
     this.debugMode = debugMode;
   }
 
@@ -40,9 +44,11 @@ export class McQuizMatchApp {
    */
   async init() {
     console.log("Start task");
-
     const tasks =
-      !this.debugMode? await this.matchModel.getNextMatch(this.secondsAdded) : await this.matchModel.getAllMatch();
+    !this.debugMode? await this.matchModel.getNextMatch(
+        this.secondsAdded, this.minutesLobbyOpened
+    ) :
+    await this.matchModel.getAllMatch();
 
     await Promise.all(tasks.docs.map(async (snapshotMatch) => {
       console.log("-== Proceed Match ==-");
@@ -64,28 +70,31 @@ export class McQuizMatchApp {
       FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>
   ) {
     // Update status to ready to avoid game being launched 2 times
-    await this.matchModel.updateStatus(snapshotMatch, {"status": "ready"});
+    await this.matchModel.updateStatus(snapshotMatch, {
+      "status": "ready",
+      "isLocked": true,
+    });
 
     // Get Match data
     const data = snapshotMatch.data();
 
-    // Prepare game data
-    // Calculate remaining time before starting
-    const {seconds, nanoseconds} = data.startingAt;
-
-    const startingAt = new Timestamp(parseInt(seconds), parseInt(nanoseconds)).toMillis();
-    const now = new Date();
-    const timeRemainingMs = startingAt - now.getTime();
-    const resultTimeLimit = data.resultTimeLimit * 1000;
-    const totalQuestions = data.questions.length;
-
     // Prepare questions for the match
+    const totalQuestions = data.questions.length;
     const questions = [];
 
     for (const questionRef of data.questions) {
       const questionData = await this.prepareQuestionData(questionRef);
       questions.push(questionData);
     }
+
+    // Calculate remaining time before starting
+    const {seconds, nanoseconds} = data.startingAt;
+    const lobbyStartingAt = new Date(new Timestamp(parseInt(seconds), parseInt(nanoseconds)).toMillis());
+    const now = new Date();
+    const matchStartingAt =
+      new Date(new Date(lobbyStartingAt).setMinutes(lobbyStartingAt.getMinutes() + this.minutesLobbyOpened));
+    const timeRemainingMs = matchStartingAt.getTime() - now.getTime();
+    const resultTimeLimit = data.resultTimeLimit * 1000;
 
     // Sleep until the game start
     if (timeRemainingMs > 0) await sleep(timeRemainingMs);
@@ -155,6 +164,7 @@ export class McQuizMatchApp {
             {
               "status": "completed",
               "synchroData.matchOver": true,
+              "isLocked": false,
             }
         );
       } else {

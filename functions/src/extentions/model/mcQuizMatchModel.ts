@@ -160,7 +160,6 @@ export default class McQuizMatchModel {
   public async getMatch(
       matchId: string,
   ) {
-    // Consistent timestamp minus ${secondsAdded} seconds
     try {
       const matchRef = this.db.doc(
           `${this.collectionMatchesName}/${matchId}`
@@ -177,19 +176,28 @@ export default class McQuizMatchModel {
    * Return the next match within the seconds added.
    *
    * @param {number} secondsAdded Second before the match should start.
+   * @param {number} minutesLobbyOpened Minute lobby is opened.
    *
    * @return {Promise<QuerySnapshot<DocumentData>>}
    */
   public async getNextMatch(
       secondsAdded: number,
+      minutesLobbyOpened: number,
   ) {
-    // Consistent timestamp minus ${secondsAdded} seconds
-    const datePlus = new Date(Date.now() + secondsAdded * 1000);
-    const nowPlus = admin.firestore.Timestamp.fromDate(datePlus);
+    const taskStartingAtTimestamp =
+      admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() - (minutesLobbyOpened * 60 * 1000) + (secondsAdded * 1000))
+      );
+
+    const matchStartingAtSafetyTimestamp =
+      admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() - (minutesLobbyOpened * 60 * 1000) + (30 * 1000))
+      );
 
     try {
       const query = this.db.collection(this.collectionMatchesName)
-          .where("startingAt", "<", nowPlus)
+          .where("startingAt", "<", taskStartingAtTimestamp)
+          .where("startingAt", ">", matchStartingAtSafetyTimestamp)
           .where("status", "==", "scheduled");
 
       return await query.get();

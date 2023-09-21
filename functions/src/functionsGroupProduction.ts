@@ -24,21 +24,29 @@ export const matchRunner =
           memory: "1GiB",
         },
         async () => {
-          // Consistent timestamp minus 90 seconds
-          const mcQuizMatchAppDevelopment = new McQuizMatchApp(
-              90,
-              "development"
-          );
+          const secondsAdded = 90;
+          const minutesLobbyOpened = 5;
 
-          const mcQuizMatchAppPreview = new McQuizMatchApp(
-              90,
-              "preview"
-          );
+          const mcQuizMatchAppDevelopment =
+            new McQuizMatchApp(
+                secondsAdded,
+                minutesLobbyOpened,
+                "development"
+            );
 
-          const mcQuizMatchAppProduction = new McQuizMatchApp(
-              90,
-              "production"
-          );
+          const mcQuizMatchAppPreview =
+            new McQuizMatchApp(
+                secondsAdded,
+                minutesLobbyOpened,
+                "preview"
+            );
+
+          const mcQuizMatchAppProduction =
+            new McQuizMatchApp(
+                secondsAdded,
+                minutesLobbyOpened,
+                "production"
+            );
 
           // Fire the app!
           await Promise.all([

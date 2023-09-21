@@ -15,8 +15,12 @@ export const gameEmulatorCz =
           memory: "2GiB",
         },
         async (req, res) => {
+          const secondsAdded = 90;
+          const minutesLobbyOpened = 5;
+
           const mcQuizMatchApp = new McQuizMatchApp(
-              90,
+              secondsAdded,
+              minutesLobbyOpened,
               "development",
               true
           );
